@@ -1,0 +1,8 @@
+{
+  "name": "Remix: DiaCare AI",
+  "description": "Smart Diabetes Risk Analysis \u0026 Health Guidance powered by advanced AI screening, medical questionnaires, and clinical analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

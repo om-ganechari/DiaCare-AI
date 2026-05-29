@@ -1,0 +1,8 @@
+flask
+flask-cors
+google-genai
+reportlab
+requests
+python-dotenv
+firebase-admin
+

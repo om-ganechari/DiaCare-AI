@@ -1,0 +1,116 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Catch-all default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common primitives (Pillar 3)
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+    
+    function isOwner(userId) { 
+      return isSignedIn() && request.auth.uid == userId; 
+    }
+
+    // Validation blueprints - Schema validation (Pillar 2)
+    function isValidFeedback(data) {
+      return data.keys().hasAll(['rating', 'comment', 'createdAt'])
+        && data.keys().size() >= 3
+        && data.keys().size() <= 5
+        && data.rating is int
+        && data.rating >= 1
+        && data.rating <= 5
+        && data.comment is string
+        && data.comment.size() <= 5000
+        && (data.keys().hasAny(['email']) ? (data.email is string && data.email.size() <= 128) : true)
+        && (data.keys().hasAny(['name']) ? (data.name is string && data.name.size() <= 128) : true);
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'name', 'email', 'createdAt'])
+        && data.keys().size() >= 4
+        && data.keys().size() <= 8
+        && data.userId is string
+        && data.userId.size() <= 128
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 128
+        && data.email is string
+        && data.email.size() <= 128
+        && (data.keys().hasAny(['age']) ? (data.age is int && data.age >= 0 && data.age <= 120) : true)
+        && (data.keys().hasAny(['gender']) ? (data.gender is string && data.gender.size() <= 32) : true)
+        && (data.keys().hasAny(['height']) ? (data.height is int || data.height is float) : true)
+        && (data.keys().hasAny(['weight']) ? (data.weight is int || data.weight is float) : true);
+    }
+
+    function isValidAssessment(data) {
+      return data.keys().hasAll(['assessmentId', 'userId', 'riskLevel', 'riskPercentage', 'healthScore', 'createdAt'])
+        && data.keys().size() >= 6
+        && data.keys().size() <= 15
+        && data.assessmentId is string
+        && data.assessmentId.size() <= 128
+        && data.userId is string
+        && data.userId.size() <= 128
+        && data.riskLevel is string
+        && (data.riskLevel == 'low' || data.riskLevel == 'moderate' || data.riskLevel == 'high')
+        && data.riskPercentage is int
+        && data.riskPercentage >= 0
+        && data.riskPercentage <= 100
+        && data.healthScore is int
+        && data.healthScore >= 0
+        && data.healthScore <= 100;
+    }
+
+    function isValidDownload(data) {
+      return data.keys().hasAll(['downloadId', 'userId', 'assessmentId', 'fileName', 'riskLevel', 'riskPercentage', 'createdAt'])
+        && data.keys().size() >= 7
+        && data.keys().size() <= 8
+        && data.downloadId is string
+        && data.downloadId.size() <= 128
+        && data.userId is string
+        && data.userId.size() <= 128
+        && data.assessmentId is string
+        && data.assessmentId.size() <= 128
+        && data.fileName is string
+        && data.fileName.size() <= 256
+        && data.riskLevel is string
+        && (data.riskLevel == 'low' || data.riskLevel == 'moderate' || data.riskLevel == 'high')
+        && data.riskPercentage is int
+        && data.riskPercentage >= 0
+        && data.riskPercentage <= 100;
+    }
+
+    // 1. Feedback collection rules (Publicly writeable/readable)
+    match /feedbacks/{feedbackId} {
+      allow create: if isValidId(feedbackId) && isValidFeedback(request.resource.data) && request.resource.data.createdAt == request.time;
+      allow read: if true;
+    }
+
+    // 2. User records collection rules (Owner read/write - Pillar 6)
+    match /users/{userId} {
+      allow create, update: if isValidId(userId) && isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.createdAt == request.time || request.resource.data.createdAt == resource.data.createdAt);
+      allow read: if isOwner(userId);
+    }
+
+    // 3. Risk assessment reports (Owner reads and secure queries - Pillar 8)
+    match /assessments/{assessmentId} {
+      allow create: if isValidId(assessmentId) && isValidAssessment(request.resource.data) && (request.resource.data.userId == 'anonymous' || isOwner(request.resource.data.userId)) && request.resource.data.createdAt == request.time;
+      allow read: if resource.data.userId == 'anonymous' || isOwner(resource.data.userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // 4. Download history collection rules (Owner read/write - Pillar 8)
+    match /downloads/{downloadId} {
+      allow create: if isValidId(downloadId) && isValidDownload(request.resource.data) && isOwner(request.resource.data.userId) && request.resource.data.createdAt == request.time;
+      allow read: if isOwner(resource.data.userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

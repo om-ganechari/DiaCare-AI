@@ -1,0 +1,188 @@
+{
+  "entities": {
+    "Feedback": {
+      "title": "Feedback",
+      "description": "User feedback and ratings for DiaCare AI",
+      "type": "object",
+      "properties": {
+        "rating": {
+          "type": "integer",
+          "description": "Star rating out of 5"
+        },
+        "comment": {
+          "type": "string",
+          "description": "Optional user feedback text"
+        },
+        "email": {
+          "type": "string",
+          "description": "Optional email of feedback author"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when feedback was created"
+        }
+      },
+      "required": ["rating", "comment", "createdAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User health base metrics profile",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Authentication UID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name"
+        },
+        "email": {
+          "type": "string",
+          "description": "Verified email"
+        },
+        "age": {
+          "type": "integer",
+          "description": "User age in years"
+        },
+        "gender": {
+          "type": "string",
+          "description": "User self-stated gender"
+        },
+        "height": {
+          "type": "number",
+          "description": "Height in cm"
+        },
+        "weight": {
+          "type": "number",
+          "description": "Weight in kg"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account registration timestamp"
+        }
+      },
+      "required": ["userId", "name", "email", "createdAt"]
+    },
+    "Assessment": {
+      "title": "Assessment",
+      "description": "A comprehensive AI Diabetes Risk analysis and clinical prediction report",
+      "type": "object",
+      "properties": {
+        "assessmentId": {
+          "type": "string",
+          "description": "Unique identifier of the assessment"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Uid of the authenticated user, or 'anonymous'"
+        },
+        "symptoms": {
+          "type": "object",
+          "description": "Key-value of symptom responses"
+        },
+        "lifestyle": {
+          "type": "object",
+          "description": "Key-value of lifestyle metrics"
+        },
+        "metrics": {
+          "type": "object",
+          "description": "Body indices (BMI, height, weight, age, etc.)"
+        },
+        "clinicalData": {
+          "type": "object",
+          "description": "Clinical values entered (Glucose, Blood Pressure, Insulin, BMI)"
+        },
+        "riskLevel": {
+          "type": "string",
+          "enum": ["low", "moderate", "high"],
+          "description": "Analyzed hazard tier"
+        },
+        "riskPercentage": {
+          "type": "integer",
+          "description": "Calculated risk chance"
+        },
+        "healthScore": {
+          "type": "integer",
+          "description": "Overall wellness index out of 100"
+        },
+        "explanation": {
+          "type": "string",
+          "description": "AI generated review of risk factors"
+        },
+        "recommendations": {
+          "type": "array",
+          "description": "Personalized wellness advice array"
+        },
+        "clinicallyPredicted": {
+          "type": "boolean",
+          "description": "Whether clinical values were incorporated"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Assessment completion timestamp"
+        }
+      },
+      "required": ["assessmentId", "userId", "riskLevel", "riskPercentage", "healthScore", "createdAt"]
+    },
+    "PdfDownload": {
+      "title": "PdfDownload",
+      "description": "Record of a clinical assessment report download by the user",
+      "type": "object",
+      "properties": {
+        "downloadId": {
+          "type": "string",
+          "description": "Unique identifier of download log"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Uid of the user who initiated download"
+        },
+        "assessmentId": {
+          "type": "string",
+          "description": "Uid of the assessment which was downloaded"
+        },
+        "fileName": {
+          "type": "string",
+          "description": "Name of PDF file"
+        },
+        "riskLevel": {
+          "type": "string",
+          "enum": ["low", "moderate", "high"],
+          "description": "Risk level in downloaded asset"
+        },
+        "riskPercentage": {
+          "type": "integer",
+          "description": "Risk percentage in downloaded asset"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Downloaded timestamp"
+        }
+      },
+      "required": ["downloadId", "userId", "assessmentId", "fileName", "riskLevel", "riskPercentage", "createdAt"]
+    }
+  },
+  "firestore": {
+    "feedbacks/{feedbackId}": {
+      "schema": "Feedback",
+      "description": "Public feedback and service rating collection"
+    },
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Registered patient records"
+    },
+    "assessments/{assessmentId}": {
+      "schema": "Assessment",
+      "description": "Evaluated screening assessment documents"
+    },
+    "downloads/{downloadId}": {
+      "schema": "PdfDownload",
+      "description": "Audit trails of generated clinical PDFs"
+    }
+  }
+}
